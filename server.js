@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 const SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex");
 const AI_KEY = process.env.ANTHROPIC_API_KEY || "";
 const AI_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";
-const COLS = ["clientes", "eventos", "fornecedores", "pedidos", "equipa", "mensagens", "config"];
+const COLS = ["clientes", "eventos", "fornecedores", "pedidos", "equipa", "mensagens", "config", "tarefas", "notas"];
 const DEFAULT_TEAM = { admin: { id: "admin", nome: "Admin", role: "Admin", pin: "1234" }, it: { id: "it", nome: "IT", role: "IT", pin: "1234" } };
 if (!process.env.SESSION_SECRET) console.warn("Aviso: SESSION_SECRET não definido. As sessões terminam sempre que o servidor reinicia.");
 
@@ -113,6 +113,7 @@ app.get("/api/sync", wrap(async (req, res) => {
   const out = [];
   for (const r of rows) {
     if (!u && !["config", "equipa"].includes(r.col)) continue;
+    if (r.col === "notas" && r.data && r.data.privada && r.data.autorId !== u.id) continue; // notas privadas só para quem as escreveu
     let data = r.data;
     if (data && r.col === "equipa" && !(u && u.role === "IT")) { const { pin, ...rest } = data; data = rest; }
     if (data && r.col === "config" && r.id === "empresa" && !u) { const { iban, nif, morada, responsavel, ...rest } = data; data = rest; }
@@ -141,6 +142,7 @@ app.put("/api/doc/:col/:id", json, wrap(async (req, res) => {
   }
   let data = { ...body, id: body.id || id };
   if (col === "config" && u.role === "Staff") return deny(res, "not_allowed");
+  if (col === "notas") { const prev = await store.get("notas", id); if (prev && prev.autorId !== u.id) return deny(res, "not_allowed"); data = { ...data, autorId: u.id, autor: u.nome }; }
   if (col === "equipa") {
     const prev = await member(id);
     if (u.role !== "IT") {
@@ -167,6 +169,7 @@ app.delete("/api/doc/:col/:id", wrap(async (req, res) => {
   const { col, id } = req.params;
   if (!COLS.includes(col)) return deny(res, "invalid_request", 400, "Pedido inválido");
   if ((col === "equipa" && u.role !== "IT") || (col === "config" && u.role === "Staff")) return deny(res, "not_allowed");
+  if (col === "notas") { const prev = await store.get("notas", id); if (prev && prev.autorId !== u.id) return deny(res, "not_allowed"); }
   await store.del(col, id); res.status(204).end();
 }));
 
@@ -218,7 +221,7 @@ app.post("/api/ai", express.json({ limit: "25mb" }), wrap(async (req, res) => {
 }));
 
 app.get("/health", (req, res) => res.json({ ok: true }));
-app.use(express.static(path.join(__dirname, "public"), { index: "index.html", maxAge: "5m" }));
-app.get("*", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
+const INDEX = [path.join(__dirname, "public", "index.html"), path.join(__dirname, "index.html")].find(p => fs.existsSync(p));
+app.get("*", (req, res) => { res.setHeader("Cache-Control", "no-cache"); res.sendFile(INDEX); });
 
 store.init().then(() => app.listen(PORT, () => console.log(`Serão a correr na porta ${PORT} · dados em ${store.kind}`))).catch(e => { console.error("Não foi possível ligar à base de dados:", e); process.exit(1); });
