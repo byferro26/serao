@@ -1074,6 +1074,52 @@ html.ai-img .ai-img-only{display:inline-flex!important}
 .ai-form textarea{min-height:44px;max-height:140px;resize:vertical;border-radius:14px}
 .ai-foot{font-size:.7rem;color:var(--muted);text-align:center;padding:0 12px 10px}
 @media (max-width:600px){.ai-fab{bottom:max(14px,env(safe-area-inset-bottom,0px));padding:12px 16px}}
+
+/* Painel */
+.dash-hello{align-items:center}
+.dash-hello .dh-txt{flex:1 1 420px;min-width:0}
+.dh-quick{display:flex;gap:8px;margin-top:16px;max-width:560px}
+.dh-quick input{flex:1;min-width:0;background:color-mix(in srgb,var(--hero-ink) 10%,transparent);border:1px solid color-mix(in srgb,var(--hero-ink) 22%,transparent);color:var(--hero-ink);border-radius:999px;padding:11px 16px;font:inherit}
+.dh-quick input::placeholder{color:var(--hero-muted)}
+.dh-quick input:focus{outline:2px solid var(--brass);outline-offset:1px}
+.dh-ring{--p:0%;width:118px;height:118px;border-radius:50%;flex:none;display:grid;place-items:center;background:conic-gradient(var(--brass) var(--p),color-mix(in srgb,var(--hero-ink) 14%,transparent) 0)}
+.dh-ring>div{width:96px;height:96px;border-radius:50%;background:var(--hero);display:grid;place-content:center;text-align:center;color:var(--hero-ink)}
+.dh-ring b{font-size:1.7rem;line-height:1}
+.dh-ring span{font-size:.72rem;color:var(--hero-muted)}
+.dash-l,.dash-r{display:grid;gap:16px;align-content:start}
+.dash-zero{display:flex;align-items:center;gap:14px;padding:6px 0;flex-wrap:wrap}
+.dash-zero>span{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-weight:700;flex:none}
+.dash-zero>div{flex:1;min-width:180px}
+.dash-bar{height:6px;border-radius:99px;background:var(--sunk);overflow:hidden;margin:2px 0 12px}
+.dash-bar.sm{height:4px;margin:6px 0}
+.dash-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--brass));border-radius:inherit}
+.dash-steps{display:grid;gap:4px}
+.dash-steps>div,.dash-steps>button{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;font:inherit;text-align:left;color:inherit;background:none;border:0}
+.dash-steps>button{cursor:pointer}
+.dash-steps>button:hover{background:var(--sunk)}
+.dash-steps>button span{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);flex:none}
+.dash-steps>button em{margin-left:auto;font-style:normal;color:var(--muted)}
+.dash-steps>.ok{color:var(--muted);text-decoration:line-through}
+.dash-steps>.ok span{width:18px;height:18px;border-radius:50%;background:var(--good);color:#fff;display:grid;place-items:center;font-size:.7rem;flex:none;text-decoration:none}
+.dash-pf{display:grid;gap:6px}
+.dash-pf>button{display:grid;text-align:left;font:inherit;color:inherit;background:none;border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}
+.dash-pf>button:hover{border-color:var(--accent)}
+.pf-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.pf-top b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dash-notes{display:grid;gap:4px}
+.dash-ev{display:grid;gap:8px}
+.dash-ev>button{display:flex;align-items:center;gap:14px;text-align:left;font:inherit;color:inherit;background:none;border:1px solid var(--line);border-radius:14px;padding:10px 14px;cursor:pointer;min-width:0}
+.dash-ev>button:hover{border-color:var(--accent)}
+.de-d{width:48px;height:52px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:grid;place-content:center;text-align:center;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;flex:none}
+.de-d b{font-size:1.3rem;letter-spacing:0;line-height:1}
+.de-m{display:grid;min-width:0;flex:1}
+.de-m b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.de-r{display:grid;justify-items:end;gap:4px;flex:none}
+@media (max-width:640px){.de-r .chip{display:none}}
+.dash-note{display:flex;gap:10px;align-items:flex-start;text-align:left;font:inherit;color:inherit;background:none;border:0;border-radius:10px;padding:8px;cursor:pointer}
+.dash-note:hover{background:var(--sunk)}
+.dash-note .dn-t{display:block;margin-top:2px}
+@media (max-width:640px){.dh-ring{display:none}.dh-quick{flex-direction:column}}
 </style>
 
 <div id="root"></div>
@@ -1904,28 +1950,80 @@ function loginView(){
 }
 
 /* ================= Painel ================= */
+/* ================= Painel (dashboard) ================= */
+const saud = () => { const hh = new Date().getHours(); return hh < 6 ? "Boa noite" : hh < 13 ? "Bom dia" : hh < 20 ? "Boa tarde" : "Boa noite"; };
+const firstName = n => String(n || "").trim().split(/\s+/)[0] || "";
+// Perfis: o que falta preencher em cada ficha
+function perfis(){
+  const out = [];
+  const chk = (o, F) => { const miss = F.filter(([k]) => { const v = o[k]; return Array.isArray(v) ? !v.length : !String(v ?? "").trim(); }).map(([, n]) => n); return {miss, pct:Math.round((F.length - miss.length) / F.length * 100)}; };
+  if (M()){ const r = chk(S.config, [["nome","nome"],["nif","NIF"],["morada","morada"],["email","email"],["telefone","telefone"],["iban","IBAN"],["responsavel","responsável"]]); if (r.miss.length) out.push({k:"empresa", n:S.config.nome || "Dados da empresa", t:"Empresa", ...r, go:{v:"config"}}); }
+  Object.values(S.fornecedores).forEach(f => { const r = chk({...f, categorias:fcats(f)}, [["categorias","categoria"],["contacto","contacto"],["telefone","telefone"],["email","email"],["nif","NIF"],["iban","IBAN"],["artigos","catálogo"]]); if (r.miss.length) out.push({k:"forn", n:f.nome, t:"Fornecedor", ...r, go:{v:"fornecedor", id:f.id}}); });
+  Object.values(S.clientes).forEach(c => { const r = chk(c, [["contacto","contacto"],["telefone","telefone"],["email","email"],["nif","NIF"],["morada","morada"]]); if (r.miss.length) out.push({k:"cli", n:c.nome, t:"Cliente", ...r, go:{v:"cliente", id:c.id}}); });
+  return out.sort((a, b) => a.pct - b.pct);
+}
+// Primeiros passos: só aparece enquanto houver alguma coisa por fazer
+function arranque(){
+  const pinsDef = IT() ? users().filter(u => !u.removido && String(u.pin) === "1234").length : 0;
+  const S5 = [
+    M() && {ok:!!(S.config.nome && S.config.nif), n:"Preencher os dados da empresa", go:{v:"config"}},
+    {ok:Object.keys(S.fornecedores).length > 0, n:"Registar o primeiro fornecedor", act:"newForn"},
+    {ok:Object.keys(S.clientes).length > 0, n:"Registar o primeiro cliente", act:"newCli"},
+    {ok:Object.keys(S.eventos).length > 0, n:"Criar o primeiro evento", act:"newEvento"},
+    {ok:Object.keys(S.tarefas).length > 0, n:"Criar a primeira tarefa", go:{v:"tarefas"}},
+    IT() && {ok:!pinsDef, n:pinsDef ? `Mudar a palavra-passe 1234 (${pinsDef} ${pinsDef > 1 ? "contas" : "conta"})` : "Palavras-passe alteradas", go:{v:"sistema"}}
+  ].filter(Boolean);
+  return S5;
+}
 function painel(){
-  const L = evList();
-  if (!L.length && !Object.keys(S.pedidos).length) return `<div class="head"><h1>Painel</h1></div>` + emptyData();
+  const L = evList(), first = firstName(user.nome);
   const vivos = L.filter(e => !["fechado","cancelado"].includes(e.estado));
   const prox = vivos.filter(e => { const d = daysTo(e.data); return d !== null && d >= 0; });
-  const em30 = prox.filter(e => daysTo(e.data) <= 30).length;
+  const em30 = prox.filter(e => daysTo(e.data) <= 30).length, next = prox[0];
   const nP = Object.values(S.pedidos).filter(p => p.estado === "novo").length;
   const conf = L.filter(live), T = conf.map(totals), s = k => T.reduce((a,t) => a + t[k], 0);
-  const att = attention();
-  return `<div class="hello glow"><div><div class="label">Painel</div><h1>Olá, <span class="it">${h(user.nome)}.</span></h1><p>${em30 ? `${em30} evento${em30 > 1 ? "s" : ""} nos próximos 30 dias` : "Sem eventos nos próximos 30 dias"}${nP ? ` · ${nP} pedido${nP > 1 ? "s" : ""} novo${nP > 1 ? "s" : ""} do website` : ""}</p></div><button class="b-brass" data-act="go" data-v="eventos">Ver eventos ${ICON_ARROW}</button></div>
-  <div class="stats">
-    <button type="button" data-act="goJ" data-j="${h(JSON.stringify({v:"pedidos"}))}" class="stat ${nP ? "hl" : ""}"><span class="label">Pedidos novos</span><b>${nP}</b><span class="muted">do website</span><span class="go" aria-hidden="true">→</span></button>
-    <button type="button" data-act="goJ" data-j="${h(JSON.stringify({v:"eventos", f:"30d"}))}" class="stat"><span class="label">Próximos 30 dias</span><b>${em30}</b><span class="muted">eventos</span><span class="go" aria-hidden="true">→</span></button>
-    ${M() ? `<button type="button" data-act="goJ" data-j="${h(JSON.stringify({v:"contas", foco:"sec-rec"}))}" class="stat"><span class="label">A receber</span><b>${money(s("falta"))}</b><span class="muted">de clientes</span><span class="go" aria-hidden="true">→</span></button>
-    <button type="button" data-act="goJ" data-j="${h(JSON.stringify({v:"contas", foco:"sec-pag"}))}" class="stat"><span class="label">A pagar</span><b>${money(s("aPagar"))}</b><span class="muted">a fornecedores</span><span class="go" aria-hidden="true">→</span></button>
-    <button type="button" data-act="goJ" data-j="${h(JSON.stringify({v:"contas", foco:"sec-res"}))}" class="stat"><span class="label">Margem confirmada</span><b>${money(s("margem"))}</b><span class="muted">${pct(s("sub") ? s("margem") / s("sub") : 0)} da venda s/ IVA</span><span class="go" aria-hidden="true">→</span></button>` : ""}
+  const att = attention(), PF = perfis(), AR = arranque(), arOk = AR.filter(x => x.ok).length;
+  const pr = {alta:0, normal:1, baixa:2};
+  const mine = myOpenTasks().sort((a, b) => tkLate(b) - tkLate(a) || (pr[a.prioridade] ?? 1) - (pr[b.prioridade] ?? 1) || (a.prazo || "9999").localeCompare(b.prazo || "9999"));
+  const late = mine.filter(tkLate).length, hoje = mine.filter(t => t.prazo === today()).length;
+  const feitasHoje = Object.values(S.tarefas).filter(t => t.estado === "feita" && t.responsavel === user.id && (t.feitaEm || "").slice(0, 10) === today()).length;
+  const ring = mine.length + feitasHoje ? Math.round(feitasHoje / (mine.length + feitasHoje) * 100) : 0;
+  const notas = Object.values(S.notas).filter(n => !n.privada && n.autorId !== user.id && S.tarefas[n.tarefaId]).sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 4);
+  const frase = [
+    mine.length ? `${mine.length} ${mine.length > 1 ? "tarefas abertas" : "tarefa aberta"}${late ? ` (${late} ${late > 1 ? "atrasadas" : "atrasada"})` : ""}` : "",
+    nP ? `${nP} ${nP > 1 ? "pedidos novos" : "pedido novo"}` : "",
+    next ? `próximo evento ${daysTo(next.data) === 0 ? "hoje" : "daqui a " + daysTo(next.data) + " dias"}` : ""
+  ].filter(Boolean);
+  const stat = (j, lab, val, sub, hl) => `<button type="button" data-act="goJ" data-j="${h(JSON.stringify(j))}" class="stat ${hl ? "hl" : ""}"><span class="label">${lab}</span><b>${val}</b><span class="muted">${sub}</span><span class="go" aria-hidden="true">→</span></button>`;
+  const goBtn = x => x.act ? `data-act="${x.act}"` : `data-act="goJ" data-j="${h(JSON.stringify(x.go))}"`;
+  return `<div class="hello glow dash-hello"><div class="dh-txt"><div class="label">${h(dtLong(today()).replace(/^./, c => c.toUpperCase()))}</div><h1>${saud()}, <span class="it">${h(first)}.</span></h1><p>${frase.length ? `Tens ${frase.join(" · ")}.` : "Não tens nada pendente. Bom momento para planear o próximo evento."}</p>
+      <form class="dh-quick" id="tkQuick" autocomplete="off"><input id="tkQuickIn" placeholder="O que há para fazer? Escreve e carrega Enter" aria-label="Nova tarefa" maxlength="200"><button class="b-brass" type="submit">+ Tarefa</button></form></div>
+    <div class="dh-ring" style="--p:${ring}%" title="Tarefas tuas feitas hoje"><div><b>${feitasHoje}</b><span>feita${feitasHoje === 1 ? "" : "s"} hoje</span></div></div>
   </div>
-  <div class="cols">
-    <section class="panel"><div class="panel-h"><h2>Próximos eventos</h2><button class="btn ghost" data-act="go" data-v="eventos">Ver todos</button></div>${evTable(prox.slice(0,8))}</section>
-    <section class="panel"><div class="panel-h"><h2>Precisa de atenção</h2><span class="mono muted">${att.length}</span></div>
-      ${att.length ? `<div class="attn">${att.slice(0,14).map(a => `<div><span class="dot2 ${a.c}"></span><span>${a.t} <button class="btn ghost sm" data-act="goJ" data-j="${h(JSON.stringify(a.go))}">Abrir</button></span></div>`).join("")}</div>` : `<div class="attn"><div><span class="dot2 g"></span><span>Tudo em dia.</span></div></div>`}
-    </section>
+  <div class="stats">
+    ${stat({v:"tarefas"}, "As minhas tarefas", mine.length, late ? `<span class="neg">${late} atrasada${late > 1 ? "s" : ""}</span>` : hoje ? `${hoje} para hoje` : "em dia", late)}
+    ${stat({v:"pedidos"}, "Pedidos novos", nP, "do website", nP)}
+    ${stat({v:"eventos", f:"30d"}, "Próximos 30 dias", em30, "eventos")}
+    ${M() ? stat({v:"contas", foco:"sec-rec"}, "A receber", money(s("falta")), "de clientes") + stat({v:"contas", foco:"sec-pag"}, "A pagar", money(s("aPagar")), "a fornecedores") : stat({v:"fornecedores"}, "Perfis por completar", PF.length, "fornecedores e clientes", PF.length)}
+  </div>
+  <div class="cols dash-cols">
+    <div class="dash-l">
+      <section class="panel"><div class="panel-h"><h2>As tuas tarefas</h2><button class="btn ghost" data-act="go" data-v="tarefas">Ver todas</button></div>
+        ${mine.length ? `<div class="tk-list">${mine.slice(0, 6).map(tkCard).join("")}</div>${mine.length > 6 ? `<p class="small muted" style="margin-top:8px">+ ${mine.length - 6} na lista de tarefas</p>` : ""}` : `<div class="dash-zero"><span>✓</span><div><b>Nada pendente.</b><p class="muted small">Usa a caixa lá em cima para apontar a próxima coisa a fazer.</p></div></div>`}
+      </section>
+      <section class="panel"><div class="panel-h"><h2>Próximos eventos</h2><button class="btn ghost" data-act="go" data-v="eventos">Ver todos</button></div>${prox.length ? `<div class="dash-ev">${prox.slice(0, 5).map(e => { const d = daysTo(e.data), x = new Date(String(e.data).slice(0,10) + "T12:00:00"), p = prod(e); return `<button data-act="open" data-id="${e.id}"><span class="de-d"><b>${x.getDate()}</b>${x.toLocaleDateString("pt-PT", {month:"short"}).replace(".", "")}</span><span class="de-m"><b>${h(e.nome)}</b><span class="small muted">${h(cli(e).nome || "")}${cli(e).nome ? " · " : ""}${paxTxt(e)}${p.mods ? ` · OS ${p.osOk}/${p.mods}` : ""}</span></span><span class="de-r">${chip(e.estado)}<span class="small muted">${d === 0 ? "hoje" : d === 1 ? "amanhã" : "daqui a " + d + " dias"}</span></span></button>`; }).join("")}</div>` : `<div class="dash-zero"><span>✦</span><div><b>Sem eventos marcados.</b><p class="muted small">Cria um evento ou converte um pedido do website.</p></div><button class="btn pri sm" data-act="newEvento">Novo evento</button></div>`}</section>
+      <section class="panel"><div class="panel-h"><h2>Perfis por completar</h2><span class="mono muted">${PF.length}</span></div>
+        ${PF.length ? `<div class="dash-pf">${PF.slice(0, 4).map(p => `<button data-act="goJ" data-j="${h(JSON.stringify(p.go))}"><span class="pf-top"><b>${h(p.n)}</b><span class="mono small muted">${p.pct}%</span></span><span class="dash-bar sm"><i style="width:${p.pct}%"></i></span><span class="small muted">${p.t} · falta ${h(p.miss.join(", "))}</span></button>`).join("")}</div>${PF.length > 4 ? `<p class="small muted" style="margin-top:8px">+ ${PF.length - 4} perfis por completar</p>` : ""}` : `<div class="attn"><div><span class="dot2 g"></span><span>Todas as fichas estão completas.</span></div></div>`}
+      </section>
+      ${notas.length ? `<section class="panel"><div class="panel-h"><h2>Da equipa</h2><span class="small muted">notas recentes</span></div><div class="dash-notes">${notas.map(n => `<button class="dash-note" data-act="goJ" data-j="${h(JSON.stringify({v:"tarefa", id:n.tarefaId}))}"><span class="tk-av">${h(initials(n.autor))}</span><span><b>${h(n.autor)}</b> em <i>${h(S.tarefas[n.tarefaId].titulo)}</i><span class="small muted dn-t">${h(String(n.txt).slice(0, 140))}</span></span></button>`).join("")}</div></section>` : ""}
+    </div>
+    <div class="dash-r">
+      ${arOk < AR.length ? `<section class="panel dash-start"><div class="panel-h"><h2>Primeiros passos</h2><span class="mono muted">${arOk}/${AR.length}</span></div><div class="dash-bar"><i style="width:${Math.round(arOk / AR.length * 100)}%"></i></div>
+        <div class="dash-steps">${AR.map(x => x.ok ? `<div class="ok"><span>✓</span>${h(x.n)}</div>` : `<button ${goBtn(x)}><span></span>${h(x.n)}<em>→</em></button>`).join("")}</div>${API || Object.keys(S.eventos).length ? "" : `<p class="small muted" style="margin-top:10px">Só a experimentar? <button class="btn ghost sm" data-act="loadSample">Carregar exemplos</button></p>`}</section>` : ""}
+      <section class="panel"><div class="panel-h"><h2>Precisa de atenção</h2><span class="mono muted">${att.length}</span></div>
+        ${att.length ? `<div class="attn">${att.slice(0, 10).map(a => `<div><span class="dot2 ${a.c}"></span><span>${a.t} <button class="btn ghost sm" data-act="goJ" data-j="${h(JSON.stringify(a.go))}">Abrir</button></span></div>`).join("")}</div>` : `<div class="attn"><div><span class="dot2 g"></span><span>Tudo em dia.</span></div></div>`}
+      </section>
+    </div>
   </div>`;
 }
 function evTable(L, noClient){
